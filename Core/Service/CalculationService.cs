@@ -1,4 +1,4 @@
-﻿using Core.Models;
+using Core.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -168,6 +168,21 @@ namespace Core.Services
         }
 
         public static double CalculateMoldRisk(double temperature, double humidity)
+        {
+            throw new NotImplementedException();
+        }
+
+        public static IEnumerable<object> SortOutdoorHumidity(List<TempHumidityRecord> records)
+        {
+            throw new NotImplementedException();
+        }
+
+        public static IEnumerable<object> SortOutdoorTemperature(List<TempHumidityRecord> records)
+        {
+            throw new NotImplementedException();
+        }
+
+        public static object CalculateOutdoorAverageTemperature(List<TempHumidityRecord> records)
         {
             throw new NotImplementedException();
         }
