@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Linq;
 using Core.Models;
@@ -6,7 +6,7 @@ using Core.Services;
 using DataAccess;
 using Spectre.Console;
 
-namespace UI
+namespace Sql_Lab_3
 {
     class Program
     {
@@ -21,7 +21,7 @@ namespace UI
             while (running)
             {
                 Console.Clear();
-                AnsiConsole.Markup("[bold yellow]Välkommen till Jakob's/ Abdirahim/Abdirahmans Dataväder Analys![/]\n");
+                AnsiConsole.Markup("[bold yellow]Välkommen till Jakob/Abdirahim/Abdirahmans Dataväder Analys![/]\n");
                 AnsiConsole.MarkupLine("[dim]Använd piltangenterna för att navigera och tryck [bold green]Enter[/] för att välja ett alternativ.[/]\n");
 
                 var options = new[]
@@ -298,8 +298,8 @@ namespace UI
 
         static void ImportFromCsv(AppDbContext context)
         {
-            Console.Write("\nAnge sökvägen till CSV-filen: ");
-            var filePath = Console.ReadLine();
+            // Ange den fullständiga sökvägen till CSV-filen
+            string filePath = @"C:\Users\jakob\source\repos\Sql Lab 3\Sql Lab 3\weather_data.csv";
 
             if (!File.Exists(filePath))
             {
@@ -310,7 +310,7 @@ namespace UI
 
             try
             {
-                var recordsWithMoldRisk = CsvImporter.Import(filePath);
+                var recordsWithMoldRisk = CsvImporter.Import(filePath);  // Läs in CSV-filen
                 foreach (var (record, moldRisk) in recordsWithMoldRisk)
                 {
                     if (!context.TempHumidityRecords.Any(r =>
@@ -318,11 +318,11 @@ namespace UI
                         r.Temperature == record.Temperature &&
                         r.Humidity == record.Humidity))
                     {
-                        context.TempHumidityRecords.Add(record);
+                        context.TempHumidityRecords.Add(record);  // Lägg till datan i databasen
                         Console.WriteLine($"Lagt till: {record.Date:yyyy-MM-dd}, {record.Temperature}°C, {record.Humidity}%, Mögelrisk: {moldRisk:F2}");
                     }
                 }
-                context.SaveChanges();
+                context.SaveChanges();  // Spara ändringarna till databasen
                 Console.WriteLine("Import från CSV lyckades.");
             }
             catch (Exception ex)
