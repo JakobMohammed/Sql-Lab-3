@@ -1,48 +1,70 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
-using System.Linq;
 using Core.Models;
-using Core.Services;
-using CsvHelper;
-using CsvHelper.Configuration;
 
-public static class CsvImporter
+namespace DataAccess
 {
-    /// <summary>
-    /// Importerar data från en CSV-fil och beräknar mögelrisk för varje post.
-    /// </summary>
-    /// <param name="filePath">Sökvägen till CSV-filen.</param>
-    /// <returns>Lista med poster och deras mögelrisk.</returns>
-    public static List<(TempHumidityRecord Record, double MoldRisk)> Import(string filePath)
+    public static class CsvImporter
     {
-        var records = new List<TempHumidityRecord>();
-
-        var config = new CsvConfiguration(CultureInfo.InvariantCulture)
+        public static List<(TempHumidityRecord record, double moldRisk)> Import(string filePath)
         {
-            HasHeaderRecord = true,
-            BadDataFound = null,
-            MissingFieldFound = null,
-            HeaderValidated = null
-        };
+            var records = new List<(TempHumidityRecord, double)>();
 
-        try
-        {
-            using (var reader = new StreamReader(filePath))
-            using (var csv = new CsvReader(reader, config))
+            try
             {
-                records = csv.GetRecords<TempHumidityRecord>().ToList();
+                using (var reader = new StreamReader(filePath))
+                {
+                    // Hoppa över header-raden om det finns en
+                    reader.ReadLine();
+
+                    while (!reader.EndOfStream)
+                    {
+                        var line = reader.ReadLine();
+                        var values = line.Split(',');
+
+                        // Förväntade kolumner: Date, Temperature, Humidity, IsIndoor
+                        if (values.Length < 4) continue;
+
+                        DateTime date;
+                        double temperature, humidity;
+                        bool isIndoor;
+
+                        // Försök att konvertera och fånga eventuella fel
+                        if (DateTime.TryParse(values[0], out date) &&
+                            double.TryParse(values[1], out temperature) &&
+                            double.TryParse(values[2], out humidity) &&
+                            bool.TryParse(values[3], out isIndoor))
+                        {
+                            var record = new TempHumidityRecord
+                            {
+                                Date = date,
+                                Temperature = temperature,
+                                Humidity = humidity,
+                                IsIndoor = isIndoor
+                            };
+
+                            // Beräkna mögelrisken baserat på temperatur och luftfuktighet (exempel)
+                            double moldRisk = CalculateMoldRisk(temperature, humidity);
+
+                            records.Add((record, moldRisk));
+                        }
+                    }
+                }
             }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Ett fel inträffade vid inläsning av CSV-filen: {ex.Message}");
-            throw;
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Fel vid CSV-import: {ex.Message}");
+            }
+
+            return records;
         }
 
-        // Beräkna mögelrisk för varje post
-        var recordsWithMoldRisk = records.Select(r => (Record: r, MoldRisk: CalculationService.CalculateMoldRisk(r))).ToList();
-        return recordsWithMoldRisk;
+        private static double CalculateMoldRisk(double temperature, double humidity)
+        {
+            // Enkel logik för att beräkna mögelrisk: hög luftfuktighet och låg temperatur ökar risken
+            return (humidity - 60) * (20 - temperature) * 0.1;
+        }
     }
 }
